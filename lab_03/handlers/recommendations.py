@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from aiogram import F, Router, types
 from aiogram.filters import Command
@@ -7,17 +7,23 @@ from aiogram.types import CallbackQuery
 from config import MESSAGES
 from keyboards.inline import navigation_keyboard
 from utils import storage
-from utils.data_loader import find_movie_by_name, display_title, top_movies_by_genre, list_genres
+from utils.data_loader import (
+    find_movie_by_name,
+    format_movie_line,
+    top_movies_by_genre,
+    list_genres,
+    get_movie_info,
+)
 
 recommendations_router = Router()
 
-USER_RECS: Dict[int, List[str]] = {}
+USER_RECS: Dict[int, List[Tuple[str, float]]] = {}
 USER_PTR: Dict[int, int] = {}
 BATCH_SIZE = 5
 
 
-def _format_batch(recs: List[str], offset: int = 0) -> List[str]:
-    return [f"{idx + 1 + offset}. {display_title(r)}" for idx, r in enumerate(recs)]
+def _format_batch(recs: List[Tuple[str, float]], offset: int = 0) -> List[str]:
+    return [f"{idx + 1 + offset}. {format_movie_line(item, score)}" for idx, (item, score) in enumerate(recs)]
 
 
 @recommendations_router.message(Command("recommend"))
@@ -35,10 +41,16 @@ async def handle_recommend(message: types.Message) -> None:
         await message.answer(MESSAGES.get("error_no_movie", "Не нашел такой фильм в базе."))
         return
 
-    recs = storage.similar_items(movie_key, top_n=30)
-    if not recs:
+    sim_recs = storage.similar_items(movie_key, top_n=30)
+    if not sim_recs:
         await message.answer(MESSAGES.get("error_no_recs", "Пока нет похожих фильмов."))
         return
+
+    # Добавляем средний рейтинг для вывода
+    recs: List[Tuple[str, float]] = []
+    for item, _sim in sim_recs:
+        _, _, avg = get_movie_info(item)
+        recs.append((item, avg))
 
     USER_RECS[message.from_user.id] = recs
     USER_PTR[message.from_user.id] = 0

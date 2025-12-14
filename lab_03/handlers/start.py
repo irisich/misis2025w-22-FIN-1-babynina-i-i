@@ -21,18 +21,19 @@ async def handle_help(message: types.Message) -> None:
     """Short help text."""
     await message.answer(
         "Напиши название фильма после команды /recommend, и я подберу похожие.\n"
-        "Например: /recommend Матрица\n"
-        "Можно выбрать жанр: /genre Комедия"
+        "Например: /recommend Disclosure\n"
+        "Если хочешь получить подборку фильмов по жанру, напиши /genre, и я подберу похожие.\n"
+        "Например: /genre comedy",
     )
 
 
 @start_router.message(F.text.lower() == "получить рекомендации")
 async def shortcut_recommend(message: types.Message) -> None:
     """Menu shortcut to recommendations."""
-    await message.answer("Напиши /recommend название фильма, и я подберу похожие.")
+    await message.answer("Напиши название фильма после команды /recommend, и я подберу похожие.")
 
 
 @start_router.message(F.text.lower() == "выбрать жанр")
 async def shortcut_genre(message: types.Message) -> None:
     """Menu shortcut to genre recommendations."""
-    await message.answer("Напиши /genre жанр. Например: /genre Комедия")
+    await message.answer("Напиши жанр после команды /genre. Например: /genre comedy")

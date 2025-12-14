@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from dataset import dataset_preprocessing, normalize_movie, GENRES
 from .schemas import Rating
 
@@ -6,21 +6,28 @@ _ratings_df = None
 _movies_df = None
 _display_map: Dict[str, str] = {}
 _avg_ratings: Dict[int, float] = {}
+_movie_meta: Dict[str, Dict[str, object]] = {}
 
 
 def load_dataset():
     """Load and cache ratings/movies dataframes."""
-    global _ratings_df, _movies_df, _display_map
+    global _ratings_df, _movies_df, _display_map, _avg_ratings, _movie_meta
     if _ratings_df is None or _movies_df is None:
         _ratings_df, _movies_df = dataset_preprocessing()
-        avg = _ratings_df.groupby("item_id")["rating"].mean().to_dict()
-        global _avg_ratings
-        _avg_ratings = avg
-        _display_map = {
-            row.normalized_title: f"{row.title_no_year.title()} ({row.year})"
-            for row in _movies_df.itertuples()
-            if isinstance(row.normalized_title, str) and row.normalized_title
-        }
+        _avg_ratings = _ratings_df.groupby("item_id")["rating"].mean().to_dict()
+        _display_map = {}
+        _movie_meta = {}
+        for _, row in _movies_df.iterrows():
+            normalized_title = row.get("normalized_title")
+            if not (isinstance(normalized_title, str) and normalized_title):
+                continue
+            title_no_year = str(row.get("title_no_year", "")).title()
+            year = row.get("year", "0000")
+            display = f"{title_no_year} ({year})"
+            _display_map[normalized_title] = display
+            genres = [g for g in GENRES if row.get(g, 0) == 1]
+            avg = float(_avg_ratings.get(row.get("movie_id"), 0.0))
+            _movie_meta[normalized_title] = {"display": display, "genres": genres, "avg": avg}
     return _ratings_df, _movies_df
 
 
@@ -66,12 +73,30 @@ def display_title(normalized_title: str) -> str:
     return _display_map.get(normalized_title, normalized_title)
 
 
+def get_movie_info(normalized_title: str) -> Tuple[str, List[str], float]:
+    """Return display title, genres list, and average rating for the movie."""
+    if not _movie_meta:
+        load_dataset()
+    meta = _movie_meta.get(normalized_title)
+    if not meta:
+        return normalized_title, [], 0.0
+    return str(meta["display"]), list(meta["genres"]), float(meta["avg"])
+
+
+def format_movie_line(normalized_title: str, rating: Optional[float] = None) -> str:
+    """Format movie line with title, genres, and rating."""
+    display, genres, avg = get_movie_info(normalized_title)
+    genres_text = ", ".join(genres) if genres else "жанр не указан"
+    score = rating if rating is not None else avg
+    return f"{display} — жанры: {genres_text} — рейтинг {score:.2f}"
+
+
 def list_genres() -> List[str]:
     """List available genres (from MovieLens)."""
     return GENRES
 
 
-def top_movies_by_genre(genre: str, top_n: int = 10) -> List[str]:
+def top_movies_by_genre(genre: str, top_n: int = 10) -> List[Tuple[str, float]]:
     """Return top movies by average rating within a genre."""
     _, movies_df = load_dataset()
     genre_clean = genre.strip()
@@ -88,5 +113,10 @@ def top_movies_by_genre(genre: str, top_n: int = 10) -> List[str]:
     filtered = filtered.copy()
     filtered["avg_rating"] = filtered["movie_id"].map(_avg_ratings).fillna(0.0)
     sorted_movies = filtered.sort_values(by="avg_rating", ascending=False)
-    titles: List[str] = sorted_movies["normalized_title"].tolist()
-    return [t for t in titles if isinstance(t, str) and t][:top_n]
+    result: List[Tuple[str, float]] = []
+    for row in sorted_movies.itertuples():
+        if isinstance(row.normalized_title, str) and row.normalized_title:
+            result.append((row.normalized_title, float(row.avg_rating)))
+            if len(result) >= top_n:
+                break
+    return result

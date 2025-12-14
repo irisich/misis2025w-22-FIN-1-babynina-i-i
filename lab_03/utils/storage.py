@@ -34,7 +34,7 @@ class RecommendationStorage:
             top_n=top_n,
         )
 
-    def similar_items(self, item_id: str, top_n: int = 10) -> List[str]:
+    def similar_items(self, item_id: str, top_n: int = 10) -> List[Tuple[str, float]]:
         """
         Return top-N most similar items to the given item_id using precomputed similarity.
         """
@@ -42,7 +42,7 @@ class RecommendationStorage:
         if not sims:
             return []
         sorted_items: List[Tuple[str, float]] = sorted(sims.items(), key=lambda x: x[1], reverse=True)
-        return [item for item, _ in sorted_items[:top_n]]
+        return sorted_items[:top_n]
 
 
 rating_storage = RecommendationStorage()
@@ -60,5 +60,5 @@ def recommend_for_user(user_id: int, k_neighbors: int = 20, top_n: int = 10) -> 
     return rating_storage.recommend_for_user(user_id, k_neighbors=k_neighbors, top_n=top_n)
 
 
-def similar_items(item_id: str, top_n: int = 10) -> List[str]:
+def similar_items(item_id: str, top_n: int = 10) -> List[Tuple[str, float]]:
     return rating_storage.similar_items(item_id=item_id, top_n=top_n)
