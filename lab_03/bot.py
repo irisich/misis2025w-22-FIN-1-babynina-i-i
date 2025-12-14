@@ -14,7 +14,7 @@ logger = logging.getLogger("movie_recommender_bot")
 
 
 def setup_logging() -> None:
-    """Configure base logging for the bot."""
+    """ настройка базового логгирования """
     logging.basicConfig(
         format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
         level=logging.INFO,
@@ -23,18 +23,17 @@ def setup_logging() -> None:
 
 def preload_similarity() -> None:
     """
-    Load the bundled ratings and build the item-based similarity matrix
-    so that recommendations are available right after /start.
+    Предзагрузка рейтингов и построение матрицы сходства.
     """
-    logger.info("Loading base ratings (MovieLens subset) and building similarity...")
+    logger.info("предзагрузка рейтингов и построение матрицы сходства")
     base_ratings = load_movielens_ratings()
     storage.load_base_ratings(base_ratings)
     item_count = len(storage.rating_storage.item_user)
-    logger.info("Prepared %d ratings across %d items", len(base_ratings), item_count)
+    logger.info("подготовлено %d оценок для %d фильмов", len(base_ratings), item_count)
 
 
 def create_dispatcher() -> Dispatcher:
-    """Create dispatcher, attach middleware and include routers."""
+    """ создает и настраивает диспетчер бота, который будет обрабатывать события """
     dp = Dispatcher()
     dp.message.middleware(LoggingMiddleware())
     dp.callback_query.middleware(LoggingMiddleware())
@@ -45,9 +44,9 @@ def create_dispatcher() -> Dispatcher:
 
 
 def run_bot() -> None:
-    """Entry point: configure, preload data, and start polling."""
+    """ запускает бота """
     if not BOT_KEY:
-        raise RuntimeError("BOT_KEY is not set in environment or .env")
+        raise RuntimeError("отсутствует BOT_KEY в переменных окружения")
 
     setup_logging()
     preload_similarity()
@@ -58,7 +57,7 @@ def run_bot() -> None:
     )
     dp = create_dispatcher()
 
-    logger.info("Bot is starting polling")
+    logger.info("бот запущен")
     dp.run_polling(bot)
 
 

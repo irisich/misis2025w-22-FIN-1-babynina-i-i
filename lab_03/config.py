@@ -27,4 +27,3 @@ def json_loader() -> Dict[str, Any]:
 
 
 MESSAGES: Dict[str, Any] = json_loader()
-

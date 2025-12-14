@@ -4,7 +4,7 @@ from aiogram import BaseMiddleware
 
 
 class LoggingMiddleware(BaseMiddleware):
-    """Simple middleware to log incoming events."""
+    """ средство промежуточной обработки для логирования входящих событий бота """
 
     async def __call__(
         self,

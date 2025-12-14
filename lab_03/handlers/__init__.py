@@ -5,5 +5,5 @@ from .recommendations import recommendations_router
 
 
 def get_routers() -> List[Router]:
-    """Return all routers that should be included in the dispatcher."""
+    """возвращает список роутеров для регистрации в основном приложении"""
     return [start_router, recommendations_router]

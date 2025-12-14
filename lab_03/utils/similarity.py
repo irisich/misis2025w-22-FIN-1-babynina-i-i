@@ -3,18 +3,31 @@ from typing import Dict
 
 
 def pearson_similarity(vec_a: Dict[int, float], vec_b: Dict[int, float]) -> float:
-    """Compute Pearson correlation between two item rating vectors."""
+    """вычисление коэффициента корреляции Пирсона между двумя векторами оценок фильмов"""
+    
+    # находим пересечение пользователей, которые оценили оба фильма
+    # создаем множества для обоих фильмов и находим их пересечение (общих пользователей)
     common_users = set(vec_a) & set(vec_b)
     n = len(common_users)
+    # если общее количество пользователей меньше 2, корреляцию Пирсона невозможно вычислить
     if n < 2:
         return 0.0
 
+    # вычисляем среднее значение оценок для каждого фильма среди общих пользователей
+    # среднее значение для фильма A
     mean_a = sum(vec_a[u] for u in common_users) / n
+    # среднее значение для фильма B
     mean_b = sum(vec_b[u] for u in common_users) / n
-
+    # вычисляем числитель формулы корреляции Пирсона: сумма произведений отклонений оценок от их средних значений
     num = sum((vec_a[u] - mean_a) * (vec_b[u] - mean_b) for u in common_users)
-    den_a = math.sqrt(sum((vec_a[u] - mean_a) ** 2 for u in common_users))
-    den_b = math.sqrt(sum((vec_b[u] - mean_b) ** 2 for u in common_users))
+    # вычисление знаменателей для нормализации: квадратные корни из суммы квадратов отклонений
+    den_a = math.sqrt(sum((vec_a[u] - mean_a) ** 2 for u in common_users))  # знаменатель для фильма A
+    den_b = math.sqrt(sum((vec_b[u] - mean_b) ** 2 for u in common_users))  # знаменатель для фильма B
+    # если у одного из фильмов нет отклонений (т.е. все оценки одинаковые), возвращаем 0 (защищаем от деления на ноль)
     if den_a == 0 or den_b == 0:
         return 0.0
+    
+    # возвращаем коэффициент Пирсона
+    # коэффициент Пирсона лежит в диапазоне от -1 до 1
+    # чем ближе к 1, тем более схожи фильмы, чем ближе к -1, тем более они противоположны
     return num / (den_a * den_b)

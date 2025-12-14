@@ -18,7 +18,10 @@ GENRES: List[str] = [
 def normalize_movie(title: str) -> str:
     """
     Нормализует название фильма для поиска.
-
+    - Преобразует строку в нижний регистр.
+    - Убирает год выпуска, если он указан в скобках в названии (например, "The Matrix (1999)" станет "the matrix").
+    - Убирает лишние пробелы в начале и конце.
+    
     Аргументы:
         title (str): исходное название фильма
 
@@ -39,11 +42,11 @@ def dataset_preprocessing() -> Tuple[pd.DataFrame, pd.DataFrame]:
     Возвращает:
         Tuple[pd.DataFrame, pd.DataFrame]: (ratings_df, movies_df)
     """
-    logging.info("Загрузка оценки пользователей (u.data)...")
+    logging.info("Загрузка оценки пользователей (u.data)")
     ratings_cols: List[str] = ["user_id", "item_id", "rating", "timestamp"]
     ratings: pd.DataFrame = pd.read_csv(U_DATA_FILE, sep="\t", names=ratings_cols, encoding="latin-1")
 
-    logging.info("Загрузка информации о фильмах и жанрах (u.item)...")
+    logging.info("Загрузка информации о фильмах и жанрах (u.item)")
     movies_raw: pd.DataFrame = pd.read_csv(U_ITEM_FILE, sep="|", header=None, encoding="latin-1", low_memory=False)
     expected_cols = 5 + len(GENRES)
     if movies_raw.shape[1] < expected_cols:
@@ -63,13 +66,13 @@ def dataset_preprocessing() -> Tuple[pd.DataFrame, pd.DataFrame]:
 
 def build_matrix(ratings: pd.DataFrame, movies: pd.DataFrame) -> Tuple[pd.DataFrame, List[str]]:
     """
-    Строит матрицу item-user (строки = normalized_title, колонки = user_id)
+    строит матрицу item-user (строки = normalized_title, колонки = user_id)
 
-    Аргументы:
+    аргументы:
         ratings (pd.DataFrame): таблица с рейтингами
         movies (pd.DataFrame): таблица с фильмами
 
-    Возвращает:
+    возвращает:
         Tuple[pd.DataFrame, List[str]]: (item_feature_matrix, item_names)
     """
     logging.info("Построение (item x user) матрицы...")
