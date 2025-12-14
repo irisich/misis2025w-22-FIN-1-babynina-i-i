@@ -1,0 +1,4 @@
+aiogram
+python-dotenv
+pandas
+numpy>=1.24.0
